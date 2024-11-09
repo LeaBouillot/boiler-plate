@@ -5,6 +5,8 @@ const port = 4000;
 const { User } = require("./models/User"); // Assuming the User model is correctly defined
 const bodyParser = require("body-parser");
 
+const config = require("./config/key");
+
 // Middleware to parse application/json and application/x-www-form-urlencoded data
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -12,13 +14,10 @@ app.use(bodyParser.json());
 // MongoDB connection using Mongoose
 const mongoose = require("mongoose");
 mongoose
-  .connect(
-    "mongodb+srv://leabouillot7:@boilerplate.i5d2r.mongodb.net/?retryWrites=true&w=majority&appName=boilerplate",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
-  )
+  .connect(config.mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("Connected to MongoDB!");
   })
@@ -26,7 +25,7 @@ mongoose
 
 // Basic route to confirm server is running
 app.get("/", (req, res) => {
-  res.send("Salut Lea!");
+  res.send("coucou!");
 });
 
 // Register route to handle user registration
