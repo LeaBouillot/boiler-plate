@@ -1,4 +1,3 @@
-require("dotenv").config();
 const express = require("express");
 const app = express();
 const port = 4000;
@@ -13,10 +12,13 @@ app.use(bodyParser.json());
 // MongoDB connection using Mongoose
 const mongoose = require("mongoose");
 mongoose
-  .connect(DATABASE_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(
+    "mongodb+srv://leabouillot7:mhwHDzVsLdtndPMJ@boilerplate.i5d2r.mongodb.net/?retryWrites=true&w=majority&appName=boilerplate",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => {
     console.log("Connected to MongoDB!");
   })
