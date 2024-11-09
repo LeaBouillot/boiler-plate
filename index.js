@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 const mongoose = require("mongoose");
 mongoose
   .connect(
-    "mongodb+srv://leabouillot7:mhwHDzVsLdtndPMJ@boilerplate.i5d2r.mongodb.net/?retryWrites=true&w=majority&appName=boilerplate",
+    "mongodb+srv://leabouillot7:@boilerplate.i5d2r.mongodb.net/?retryWrites=true&w=majority&appName=boilerplate",
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
