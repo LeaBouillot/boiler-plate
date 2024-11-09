@@ -3,8 +3,7 @@ const app = express();
 const port = 4000;
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const uri =
-  "mongodb+srv://leabouillot7:mhwHDzVsLdtndPMJ@boilerplate.i5d2r.mongodb.net/?retryWrites=true&w=majority&appName=boilerplate";
+const uri = DATABASE_URL;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
