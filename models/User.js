@@ -66,6 +66,14 @@ userSchema.pre("save", function (next) {
 });
 console.log("Password before hashing:", this.password);
 
+// Compare the entered password with the hashed password
+userSchema.methods.comparePassword = function (enteredPassword, callback) {
+  bcrypt.compare(enteredPassword, this.password, (err, isMatch) => {
+    if (err) return callback(err);
+    callback(null, isMatch);
+  });
+};
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = { User };
