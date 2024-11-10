@@ -4,12 +4,14 @@ const port = 4000;
 
 const { User } = require("./models/User"); // Assuming the User model is correctly defined
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 const config = require("./config/key");
 
 // Middleware to parse application/json and application/x-www-form-urlencoded data
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // MongoDB connection using Mongoose
 const mongoose = require("mongoose");
@@ -71,41 +73,33 @@ app.post("/register", async (req, res) => {
 
 // login
 app.post("/login", (req, res) => {
-//findOne req email in db
-User.findOne({ email: req.body.email }, (err, user) => {
-  if(!user) {
-    return res.json({
-      success: false,
-      message: "User not found"
-    });
-  }
-
-  // check if password matches (comparePassword method is in User.js)
-  user.comparePassword(req.body.password, (err, isMatch) => {
-    if(!isMatch) {
+  //findOne req email in db
+  User.findOne({ email: req.body.email }, (err, user) => {
+    if (!user) {
       return res.json({
         success: false,
-        message: "Wrong password"
+        message: "User not found",
       });
-
-      //else generate token: jsonwebtoken
- user.generateToken((err, user) => {
-  if(err) throw err;
-
-  res.json({
-    success: true,
-    token: user
-  });
- })
     }
 
-
+    // check if password matches (comparePassword method is in User.js)
+    user.comparePassword(req.body.password, (err, isMatch) => {
+      if (!isMatch) {
+        return res.json({
+          success: false,
+          message: "Wrong password",
+        });
+      }
+      //else generate token: jsonwebtoken
+      user.generateToken((err, user) => {
+        if (err) return res.status(err);
+        res
+          .cookie("x-auth", user.token)
+          .status(200)
+          .json({ loginSucess: true, userId: user.id });
+      });
+    });
   });
-});
-
-
-// si password === password hash, create token
-
 });
 
 // Start the server

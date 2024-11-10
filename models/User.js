@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const jwt = require("jsonwebtoken");
 
 // monoose schema
 const mongoose = require("mongoose");
@@ -20,8 +21,6 @@ const userSchema = mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 8,
-    maxlength: 100,
     select: false, // hide the password in the response
     // validate: {
     //   validator: (value) =>
@@ -40,9 +39,6 @@ const userSchema = mongoose.Schema({
   image: String,
   token: {
     type: String,
-  },
-  tokenExpiration: {
-    type: Number,
   },
 });
 
@@ -67,10 +63,23 @@ userSchema.pre("save", function (next) {
 console.log("Password before hashing:", this.password);
 
 // Compare the entered password with the hashed password
+
 userSchema.methods.comparePassword = function (enteredPassword, callback) {
   bcrypt.compare(enteredPassword, this.password, (err, isMatch) => {
     if (err) return callback(err);
     callback(null, isMatch);
+  });
+};
+
+userSchema.method.generateToken = function (callback) {
+  const user = this;
+  const token = jwt.sign(user._id.toHexString(), "secretToken");
+
+  user.token = token;
+
+  user.save((err, user) => {
+    if (err) return callback(err);
+    callback(null, user);
   });
 };
 
