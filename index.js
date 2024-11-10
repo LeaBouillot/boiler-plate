@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
 const config = require("./config/key");
+const { auth } = require("auth");
 
 // Middleware to parse application/json and application/x-www-form-urlencoded data
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,11 +28,11 @@ mongoose
 
 // Basic route to confirm server is running
 app.get("/", (req, res) => {
-  res.send("coucou!");
+  res.send("Welcome chez Léa!");
 });
 
 // Register route to handle user registration
-app.post("/register", async (req, res) => {
+app.post("/api/users/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -72,7 +73,7 @@ app.post("/register", async (req, res) => {
 });
 
 // login
-app.post("/login", (req, res) => {
+app.post("/api/users/login", (req, res) => {
   //findOne req email in db
   User.findOne({ email: req.body.email }, (err, user) => {
     if (!user) {
@@ -94,11 +95,37 @@ app.post("/login", (req, res) => {
       user.generateToken((err, user) => {
         if (err) return res.status(err);
         res
-          .cookie("x-auth", user.token)
+          .cookie("x_auth", user.token)
           .status(200)
           .json({ loginSucess: true, userId: user.id });
       });
     });
+  });
+});
+
+//auth router
+app.get("/api/users/auth", auth, (req, res) => {
+  // Authenticated user information
+  res.status(200).json({
+    userId: req.user._id,
+    isAdmin: req.user.role === 0 ? false : true,
+    email: req.user.email,
+    name: req.user.name,
+    role: req.user.role,
+    Image: req.user.image,
+  });
+});
+
+// logout
+app.get("/api/users/logout", auth, (req, res) => {
+  // Remove token from user document
+  User.findByIdAndUpdate(req.user._id, { token: "" }, (err, user) => {
+    if (err)
+      return res.status(500).json({ success: false, message: "Server Error" });
+    res
+      .status(200)
+      .clearCookie("x_auth")
+      .json({ success: true, message: "Logged out" });
   });
 });
 
