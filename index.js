@@ -69,6 +69,45 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// login
+app.post("/login", (req, res) => {
+//findOne req email in db
+User.findOne({ email: req.body.email }, (err, user) => {
+  if(!user) {
+    return res.json({
+      success: false,
+      message: "User not found"
+    });
+  }
+
+  // check if password matches (comparePassword method is in User.js)
+  user.comparePassword(req.body.password, (err, isMatch) => {
+    if(!isMatch) {
+      return res.json({
+        success: false,
+        message: "Wrong password"
+      });
+
+      //else generate token: jsonwebtoken
+ user.generateToken((err, user) => {
+  if(err) throw err;
+
+  res.json({
+    success: true,
+    token: user
+  });
+ })
+    }
+
+
+  });
+});
+
+
+// si password === password hash, create token
+
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
