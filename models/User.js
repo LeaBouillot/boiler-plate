@@ -7,20 +7,20 @@ const mongoose = require("mongoose");
 const userSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    // required: true,
     minlength: 3,
     maxlength: 50,
   },
   email: {
     type: String,
-    required: true,
+    // required: true,
     unique: true,
     trim: true,
     match: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
   },
   password: {
     type: String,
-    required: true,
+    // required: true,
     select: false, // hide the password in the response
     // validate: {
     //   validator: (value) =>
@@ -60,7 +60,6 @@ userSchema.pre("save", function (next) {
     });
   });
 });
-console.log("Password before hashing:", this.password);
 
 // Compare the entered password with the hashed password
 
@@ -83,20 +82,17 @@ userSchema.method.generateToken = function (callback) {
   });
 };
 
-// 
-userSchema.statics.findByToken = function(token, callback) {
+//
+userSchema.statics.findByToken = function (token, callback) {
   var user = this;
-  // user._id + '' = token
   jwt.verify(token, "secretToken", (err, decoded) => {
-
-    User.findOne({ "_id": decoded, "token": token }, (err, user) => {
+    if (err) return callback(err);
+    user.findOne({ _id: decoded, token }, (err, user) => {
       if (err) return callback(err);
-      if (!user) return callback(new Error("User not found"));
       callback(null, user);
     });
-
   });
-}
+};
 
 const User = mongoose.model("User", userSchema);
 

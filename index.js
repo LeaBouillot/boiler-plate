@@ -1,20 +1,18 @@
 const express = require("express");
 const app = express();
-const port = 4000;
-
-const { User } = require("./models/User"); // Assuming the User model is correctly defined
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-
 const config = require("./config/key");
-const { auth } = require("auth");
+const { auth } = require("./middleware/auth");
+const { User } = require("./models/User");
 
-// Middleware to parse application/json and application/x-www-form-urlencoded data
+//application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
+
+//application/json
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// MongoDB connection using Mongoose
 const mongoose = require("mongoose");
 mongoose
   .connect(config.mongoURI, {
@@ -22,114 +20,93 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log("Connected to MongoDB!");
+    console.log("MongoDB connected");
   })
-  .catch((error) => console.error("Error connecting to MongoDB:", error));
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
+  });
 
-// Basic route to confirm server is running
-app.get("/", (req, res) => {
-  res.send("Welcome chez Léa!");
-});
+app.get("/", (req, res) => res.send("Hello World!~~ "));
 
-// Register route to handle user registration
-app.post("/api/users/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+app.get("/api/hello", (req, res) => res.send("Hello World!~~ "));
 
-    // Ensure required fields are provided
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Please provide all required fields: name, email, and password.",
-      });
-    }
+app.post("/api/users/register", (req, res) => {
+  //회원 가입 할떄 필요한 정보들을  client에서 가져오면
+  //그것들을  데이터 베이스에 넣어준다.
+  const user = new User(req.body);
 
-    // Create a new user from the request body
-    const user = new User({
-      name,
-      email,
-      password,
-    });
-
-    // Save the user to the database
-    await user.save();
-
-    // Send a success response
-    res.status(200).json({
+  user.save((err, userInfo) => {
+    if (err) return res.json({ success: false, err });
+    return res.status(200).json({
       success: true,
-      message: "User registered successfully",
     });
-  } catch (error) {
-    console.error("Error during registration:", error);
-
-    // Send a failure response
-    res.status(500).json({
-      success: false,
-      message: "Error registering user",
-      error: error.message,
-    });
-  }
+  });
 });
 
-// login
 app.post("/api/users/login", (req, res) => {
-  //findOne req email in db
+  // console.log('ping')
+  //요청된 이메일을 데이터베이스에서 있는지 찾는다.
   User.findOne({ email: req.body.email }, (err, user) => {
+    // console.log('user', user)
     if (!user) {
       return res.json({
-        success: false,
-        message: "User not found",
+        loginSuccess: false,
+        message: "제공된 이메일에 해당하는 유저가 없습니다.",
       });
     }
 
-    // check if password matches (comparePassword method is in User.js)
+    //요청된 이메일이 데이터 베이스에 있다면 비밀번호가 맞는 비밀번호 인지 확인.
     user.comparePassword(req.body.password, (err, isMatch) => {
-      if (!isMatch) {
+      // console.log('err',err)
+
+      // console.log('isMatch',isMatch)
+
+      if (!isMatch)
         return res.json({
-          success: false,
-          message: "Wrong password",
+          loginSuccess: false,
+          message: "비밀번호가 틀렸습니다.",
         });
-      }
-      //else generate token: jsonwebtoken
+
+      //비밀번호 까지 맞다면 토큰을 생성하기.
       user.generateToken((err, user) => {
-        if (err) return res.status(err);
+        if (err) return res.status(400).send(err);
+
+        // 토큰을 저장한다.  어디에 ?  쿠키 , 로컳스토리지
         res
           .cookie("x_auth", user.token)
           .status(200)
-          .json({ loginSucess: true, userId: user.id });
+          .json({ loginSuccess: true, userId: user._id });
       });
     });
   });
 });
 
-//auth router
+// role 1 어드민    role 2 특정 부서 어드민
+// role 0 -> 일반유저   role 0이 아니면  관리자
 app.get("/api/users/auth", auth, (req, res) => {
-  // Authenticated user information
+  //여기 까지 미들웨어를 통과해 왔다는 얘기는  Authentication 이 True 라는 말.
   res.status(200).json({
-    userId: req.user._id,
+    _id: req.user._id,
     isAdmin: req.user.role === 0 ? false : true,
+    isAuth: true,
     email: req.user.email,
     name: req.user.name,
+    lastname: req.user.lastname,
     role: req.user.role,
-    Image: req.user.image,
+    image: req.user.image,
   });
 });
 
-// logout
 app.get("/api/users/logout", auth, (req, res) => {
-  // Remove token from user document
-  User.findByIdAndUpdate(req.user._id, { token: "" }, (err, user) => {
-    if (err)
-      return res.status(500).json({ success: false, message: "Server Error" });
-    res
-      .status(200)
-      .clearCookie("x_auth")
-      .json({ success: true, message: "Logged out" });
+  // console.log('req.user', req.user)
+  User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
+    if (err) return res.json({ success: false, err });
+    return res.status(200).send({
+      success: true,
+    });
   });
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+const port = 4000;
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`));
